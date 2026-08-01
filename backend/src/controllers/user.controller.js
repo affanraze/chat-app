@@ -62,18 +62,14 @@ const loginUser = asyncHandler(async (req, res) => {
     "SELECT id,email,username,password FROM users WHERE email=$1 OR username=$2",
     [email, username]
   );
-  
-  
+
   if (result.rows.length === 0) {
     throw new ApiError(401, "unauthorised request");
   }
 
   const dbUser = result.rows[0];
 
-  const isPasswordCorrect = await comparePassword(
-    password,
-    dbUser.password
-  );
+  const isPasswordCorrect = await comparePassword(password, dbUser.password);
 
   if (!isPasswordCorrect) {
     throw new ApiError(401, "invalid credentials");
@@ -88,19 +84,36 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === "production",
   };
 
-
   await query("UPDATE users SET refresh_token = $1 WHERE id =$2", [
     refreshToken,
     dbUser.id,
   ]);
 
-const { password, ...user } = dbUser;
+  const { password, ...user } = dbUser;
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200,user, "user logged in successfully"));
+    .json(new ApiResponse(200, user, "user logged in successfully"));
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+  await query("UPDATE users SET refresh_token = null WHERE id=$1", [
+    req.user.id,
+  ]);
+
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
+    .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
 export { registerUser };
