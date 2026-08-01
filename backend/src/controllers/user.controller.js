@@ -116,4 +116,42 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
+const updateUserProfileInfo = asyncHandler(async (req, res) => {
+  const {} = req.body;
+});
+
+const updateUserPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "Both fields are required");
+  }
+
+  const checkPassword = await comparePassword(
+    currentPassword,
+    req.user.password
+  );
+
+  if (!checkPassword) {
+    throw new ApiError(400, "Password incorrect");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(
+      400,
+      "New password must be different from current password"
+    );
+  }
+
+  const hash_password = await hashPassword(newPassword);
+  await query("UPDATE users SET password=$1 WHERE id=$2", [
+    hash_password,
+    req.user.id,
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "password updated successfully"));
+});
+
 export { registerUser };
