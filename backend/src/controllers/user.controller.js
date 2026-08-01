@@ -62,22 +62,25 @@ const loginUser = asyncHandler(async (req, res) => {
     "SELECT id,email,username,password FROM users WHERE email=$1 OR username=$2",
     [email, username]
   );
-
+  
+  
   if (result.rows.length === 0) {
     throw new ApiError(401, "unauthorised request");
   }
 
+  const dbUser = result.rows[0];
+
   const isPasswordCorrect = await comparePassword(
     password,
-    result.rows[0].password
+    dbUser.password
   );
 
   if (!isPasswordCorrect) {
-    throw new ApiError(400, "invalid credentials");
+    throw new ApiError(401, "invalid credentials");
   }
 
-  const accessToken = await generateAccessToken(result.rows[0]);
-  const refreshToken = await generateRefreshToken(result.rows[0]);
+  const accessToken = await generateAccessToken(dbUser);
+  const refreshToken = await generateRefreshToken(dbUser);
 
   const cookieOptions = {
     httpOnly: true,
@@ -85,14 +88,19 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === "production",
   };
 
-  const user = result.rows[0];
-  const { password, ...user } = result.rows[0];
+
+  await query("UPDATE users SET refresh_token = $1 WHERE id =$2", [
+    refreshToken,
+    dbUser.id,
+  ]);
+
+const { password, ...user } = dbUser;
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, user, "user logged in successfully"));
+    .json(new ApiResponse(200,user, "user logged in successfully"));
 });
 
 export { registerUser };
