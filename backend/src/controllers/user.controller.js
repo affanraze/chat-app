@@ -118,8 +118,34 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
-const updateUserProfileInfo = asyncHandler(async (req, res) => {
-  const {} = req.body;
+const updatedProfileInfo = asyncHandler(async (req, res) => {
+  const { email, username } = req.body;
+
+  if (!email && !username) {
+    throw new ApiError(400, "username or email is required");
+  }
+
+  const updatedUser = await query(
+    `
+    UPDATE users
+    SET
+      email = COALESCE($1, email),
+      username = COALESCE($2, username)
+    WHERE id = $3
+    RETURNING id, email, username;
+    `,
+    [email ?? null, username ?? null, req.user.id]
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedUser.rows[0],
+        "user info updated successfully"
+      )
+    );
 });
 
 const updateUserPassword = asyncHandler(async (req, res) => {
