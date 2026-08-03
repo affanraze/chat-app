@@ -160,7 +160,7 @@ const changeAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is reqired");
+    throw new ApiError(400, "Avatar file is required");
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
@@ -173,20 +173,34 @@ const changeAvatar = asyncHandler(async (req, res) => {
     req.user.id,
   ]);
 
-  const user = await query(
-    "UPDATE users SET avatar=$1 AND avatar_publicid=$2 WHERE id =$3",
-    [avatar.url, avatar.public_id, req.user.id]
-  );
-
-  if (dbUser.rows[0].avatar_publicid !== null) {
-    await delFromCloudinary(dbUser.rows[0].avatar_publicid);
+  try {
+    const user = await query(
+      "UPDATE users SET avatar=$1,avatar_publicid=$2 WHERE id =$3 RETURNING avatar",
+      [avatar.url, avatar.public_id, req.user.id]
+    );
+  } catch (error) {
+    await delFromCloudinary(avatar.public_id);
+    throw new ApiError(500, "failed to change avatar");
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, user.rows[0].avatar, "avatar updated successfully")
-    );
+  const oldAvatarId = dbUser.rows[0].avatar_publicid;
+
+  if (oldAvatarId) {
+    try {
+      await delFromCloudinary(oldAvatarId);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        avatar: user.rows[0].avatar,
+      },
+      "avatar updated successfully"
+    )
+  );
 });
 
 export { registerUser };
