@@ -4,7 +4,11 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { query } from "../utils/query.js";
 import { hashPassword, comparePassword } from "../utils/bcrypt.js";
 import { findUserByEmail, findUserByUserName } from "../models/user.model.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { delFromCloudinary } from "../utils/delFromCloudinary.js";
 
@@ -227,6 +231,45 @@ const changeAvatar = asyncHandler(async (req, res) => {
       "avatar updated successfully"
     )
   );
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies?.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "unauthorized request");
+  }
+
+  const decoded = await verifyRefreshToken(incomingRefreshToken);
+  if (!decoded) {
+    throw new ApiError(401, "invalid access");
+  }
+
+  const user = await query("SELECT id,refreshToken FROM users WHERE id =$1", [
+    decoded.id,
+  ]);
+  if (!user) {
+    throw new ApiError(401, "user doesnt exist");
+  }
+
+  if (user.rows[0].refreshToken !== incomingRefreshToken) {
+    throw new ApiError(401, "unauthorized access");
+  }
+
+  const accessToken = await generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user);
+
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, {}, "access and refresh tokens refreshed"));
 });
 
 export { registerUser };
