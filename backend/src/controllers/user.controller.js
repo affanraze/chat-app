@@ -5,6 +5,8 @@ import { query } from "../utils/query.js";
 import { hashPassword, comparePassword } from "../utils/bcrypt.js";
 import { findUserByEmail, findUserByUserName } from "../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { delFromCloudinary } from "../utils/delFromCloudinary.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
@@ -152,6 +154,39 @@ const updateUserPassword = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "password updated successfully"));
+});
+
+const changeAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is reqired");
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar) {
+    throw new ApiError(500, "failed to upload on cloudinary");
+  }
+
+  const dbUser = await query("SELECT avatar_publicid from users WHERE id =$1", [
+    req.user.id,
+  ]);
+
+  const user = await query(
+    "UPDATE users SET avatar=$1 AND avatar_publicid=$2 WHERE id =$3",
+    [avatar.url, avatar.public_id, req.user.id]
+  );
+
+  if (dbUser.rows[0].avatar_publicid !== null) {
+    await delFromCloudinary(dbUser.rows[0].avatar_publicid);
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, user.rows[0].avatar, "avatar updated successfully")
+    );
 });
 
 export { registerUser };
