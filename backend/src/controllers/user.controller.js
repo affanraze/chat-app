@@ -272,4 +272,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "access and refresh tokens refreshed"));
 });
 
-export { registerUser };
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = {
+    id: req.user.id,
+    email: req.user.email,
+    avatar: req.user.avatar,
+    username: req.user.username,
+  };
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "current user fetched successfully"));
+});
+
+export { registerUser, refreshAccessToken };
