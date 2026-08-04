@@ -304,4 +304,15 @@ const getUserByUserName = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user.rows[0], "user fetched successfully"));
 });
-export { registerUser, refreshAccessToken };
+
+export {
+  registerUser,
+  refreshAccessToken,
+  loginUser,
+  logoutUser,
+  updatedProfileInfo,
+  updateUserPassword,
+  changeAvatar,
+  getCurrentUser,
+  getUserByUserName,
+};
