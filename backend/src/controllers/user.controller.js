@@ -284,4 +284,24 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "current user fetched successfully"));
 });
 
+const getUserByUserName = asyncHandler(async (req, res) => {
+  const { username } = req.params.username;
+
+  if (!username) {
+    throw new ApiError(400, "username is required");
+  }
+
+  const user = await query(
+    "SELECT id,username,avatar,created_at FROM users WHERE username = $1",
+    [username]
+  );
+
+  if (user.rows.length === 0) {
+    throw new ApiError(404, "user doesnot exist");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user.rows[0], "user fetched successfully"));
+});
 export { registerUser, refreshAccessToken };
