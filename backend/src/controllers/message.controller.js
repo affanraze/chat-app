@@ -50,7 +50,7 @@ const getConversationMessages = asyncHandler(async (req, res) => {
 
 const getMyConversation = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  await query(
+  const chatData = await query(
     `SELECT DISTINCT ON (
       CASE
           WHEN m.sender_id = $1 THEN m.receiver_id
@@ -78,8 +78,14 @@ const getMyConversation = asyncHandler(async (req, res) => {
           ELSE m.sender_id
       END,
       m.created_at DESC`,
-    [req.user.id]
+    [userId]
   );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, chatData.rows, "chat data fetched successfully")
+    );
 });
 
 export { sendMessage, getConversationMessages, getMyConversation };
