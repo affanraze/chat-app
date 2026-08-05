@@ -48,7 +48,7 @@ const getConversationMessages = asyncHandler(async (req, res) => {
     );
 });
 
-const getMyConversation = asyncHandler(async (req, res) => {
+const getMyConversations = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const chatData = await query(
     `SELECT DISTINCT ON (
@@ -61,8 +61,8 @@ const getMyConversation = asyncHandler(async (req, res) => {
       u.username,
       u.avatar,
       m.id AS message_id,
-      m.content,
-      m.created_at
+      m.content AS last_message,
+      m.created_at AS last_message_at
   FROM messages m
   JOIN users u
   ON u.id =
@@ -88,4 +88,4 @@ const getMyConversation = asyncHandler(async (req, res) => {
     );
 });
 
-export { sendMessage, getConversationMessages, getMyConversation };
+export { sendMessage, getConversationMessages, getMyConversations };
