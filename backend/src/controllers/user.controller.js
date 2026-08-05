@@ -69,6 +69,7 @@ const loginUser = asyncHandler(async (req, res) => {
     [email, username]
   );
 
+
   if (result.rows.length === 0) {
     throw new ApiError(401, "unauthorised request");
   }
@@ -304,7 +305,7 @@ const getUserByUserName = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user.rows[0], "user fetched successfully"));
 });
-
+ 
 export {
   registerUser,
   refreshAccessToken,
