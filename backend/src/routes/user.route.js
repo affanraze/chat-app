@@ -9,6 +9,7 @@ import {
   getCurrentUser,
   getUserByUserName,
   loginUser,
+  logoutUser,
   refreshAccessToken,
   registerUser,
   updatedProfileInfo,
@@ -20,7 +21,7 @@ router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 
 // secured routes
-router.route("/logout").post(verifyJWT, loginUser);
+router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/update-profile-info").patch(verifyJWT, updatedProfileInfo);
 router.route("/update-password").patch(verifyJWT, updateUserPassword);
 router

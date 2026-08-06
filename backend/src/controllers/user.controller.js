@@ -39,6 +39,11 @@ const registerUser = asyncHandler(async (req, res) => {
   const accessToken = await generateAccessToken(user.rows[0]);
   const refreshToken = await generateRefreshToken(user.rows[0]);
 
+  await query("UPDATE users SET refresh_token = $1 WHERE id =$2", [
+    refreshToken,
+    user.rows[0].id,
+  ]);
+
   const cookieOptions = {
     httpOnly: true,
     sameSite: "strict",
@@ -68,7 +73,6 @@ const loginUser = asyncHandler(async (req, res) => {
     [email, username]
   );
 
-
   if (result.rows.length === 0) {
     throw new ApiError(401, "unauthorised request");
   }
@@ -95,7 +99,7 @@ const loginUser = asyncHandler(async (req, res) => {
     dbUser.id,
   ]);
 
-  const { password, ...user } = dbUser;
+  const { password: _, ...user } = dbUser;
 
   return res
     .status(200)
@@ -240,24 +244,33 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "unauthorized request");
   }
 
-  const decoded = await verifyRefreshToken(incomingRefreshToken);
-  if (!decoded) {
+  let decoded;
+  try {
+    decoded = await verifyRefreshToken(incomingRefreshToken);
+  } catch (error) {
     throw new ApiError(401, "invalid access");
   }
 
-  const user = await query("SELECT id,refreshToken FROM users WHERE id =$1", [
+  const user = await query("SELECT id,refresh_token FROM users WHERE id =$1", [
     decoded.id,
   ]);
-  if (!user) {
+  if (user.rows.length === 0) {
     throw new ApiError(401, "user doesnt exist");
   }
 
-  if (user.rows[0].refreshToken !== incomingRefreshToken) {
+  if (user.rows[0].refresh_token !== incomingRefreshToken) {
     throw new ApiError(401, "unauthorized access");
   }
 
-  const accessToken = await generateAccessToken(user);
-  const refreshToken = await generateRefreshToken(user);
+  const dbUser = user.rows[0];
+
+  const accessToken = await generateAccessToken(dbUser);
+  const refreshToken = await generateRefreshToken(dbUser);
+
+  await query("UPDATE users SET refresh_token = $1 WHERE id =$2", [
+    refreshToken,
+    dbUser.id,
+  ]);
 
   const cookieOptions = {
     httpOnly: true,
@@ -285,7 +298,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const getUserByUserName = asyncHandler(async (req, res) => {
-  const { username } = req.params.username;
+  const { username } = req.params;
 
   if (!username) {
     throw new ApiError(400, "username is required");
