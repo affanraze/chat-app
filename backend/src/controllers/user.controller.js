@@ -3,7 +3,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { query } from "../utils/query.js";
 import { hashPassword, comparePassword } from "../utils/bcrypt.js";
-import { findUserByEmail, findUserByUserName } from "../models/user.model.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -305,7 +304,7 @@ const getUserByUserName = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user.rows[0], "user fetched successfully"));
 });
- 
+
 export {
   registerUser,
   refreshAccessToken,
