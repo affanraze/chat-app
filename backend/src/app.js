@@ -1,4 +1,4 @@
-  import express from "express";
+import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -11,7 +11,8 @@ app.use(cookieParser());
 
 // Routes import
 import userRouter from "./routes/user.route.js";
+import messageRouter from "./routes/message.route.js";
 app.use("/api/v1/users", userRouter);
-
+app.use("/api/v1/messages", messageRouter);
 export { app };
 // http://localhost:4000/api/v1/users/register

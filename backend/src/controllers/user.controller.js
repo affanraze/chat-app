@@ -203,12 +203,24 @@ const changeAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(500, "failed to upload on cloudinary");
   }
 
-  const dbUser = await query("SELECT avatar_publicid from users WHERE id =$1", [
-    req.user.id,
-  ]);
-
+  let dbUser;
   try {
-    const user = await query(
+    dbUser = await query("SELECT avatar_publicid from users WHERE id =$1", [
+      req.user.id,
+    ]);
+  } catch (error) {
+    await delFromCloudinary(avatar.public_id);
+    throw new ApiError(500, "failed to change avatar");
+  }
+
+  if (dbUser.rows.length === 0) {
+    await delFromCloudinary(avatar.public_id);
+    throw new ApiError(404, "user doesnt exist");
+  }
+
+  let updatedUser;
+  try {
+    updatedUser = await query(
       "UPDATE users SET avatar=$1,avatar_publicid=$2 WHERE id =$3 RETURNING avatar",
       [avatar.url, avatar.public_id, req.user.id]
     );
@@ -223,14 +235,14 @@ const changeAvatar = asyncHandler(async (req, res) => {
     try {
       await delFromCloudinary(oldAvatarId);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        avatar: user.rows[0].avatar,
+        avatar: updatedUser.rows[0].avatar,
       },
       "avatar updated successfully"
     )
