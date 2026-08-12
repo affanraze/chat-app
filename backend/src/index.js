@@ -9,10 +9,18 @@ dotenv.config({
 });
 
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  },
+});
 
 io.on("connection", (socket) => {
   console.log("a user is connected");
+  socket.on("disconnect", () => {
+    console.log("a user disconnected");
+  });
 });
 
 server.listen(process.env.PORT, () => {
