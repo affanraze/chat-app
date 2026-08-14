@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 import { app } from "./app.js";
+import InitializeSocket from "./sockets/chat.socket.js";
 
 dotenv.config({
   path: "./.env",
@@ -16,12 +17,7 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  console.log("a user is connected");
-  socket.on("disconnect", () => {
-    console.log("a user disconnected");
-  });
-});
+InitializeSocket(io);
 
 server.listen(process.env.PORT, () => {
   console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
