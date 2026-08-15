@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useRef } from "react";
 import { ArrowLeft, MoreVertical, Send, Paperclip, Smile } from "lucide-react";
 import Avatar from "../components/Avatar";
 import MessageBubble from "../components/MessageBubble";
 import DUMMY_MESSAGES from "../data/messages.js";
+import { sendMessage } from "../sockets";
 
 export default function ChatPage({ contact, onBack }) {
+  const formRef = useRef();
+  const handleSend = () => {
+    const text = formRef.current.value.trim();
+    if (!text) return;
+    sendMessage({ text, contactId: contact?.id });
+    formRef.current.value = "";
+  };
+
   if (!contact) {
     return (
       <div className="h-full hidden md:flex flex-col items-center justify-center gap-3 bg-[var(--bg)] text-[var(--muted)]">
@@ -14,7 +23,10 @@ export default function ChatPage({ contact, onBack }) {
         >
           <Send size={22} />
         </div>
-        <p className="text-[14px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <p
+          className="text-[14px]"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
           Select a chat to start messaging
         </p>
       </div>
@@ -31,7 +43,12 @@ export default function ChatPage({ contact, onBack }) {
         >
           <ArrowLeft size={18} />
         </button>
-        <Avatar initials={contact.initials} hue={contact.hue} online={contact.online} size={38} />
+        <Avatar
+          initials={contact.initials}
+          hue={contact.hue}
+          online={contact.online}
+          size={38}
+        />
         <div className="min-w-0 flex-1">
           <div
             className="text-[15px] font-medium truncate"
@@ -64,10 +81,18 @@ export default function ChatPage({ contact, onBack }) {
           <Paperclip size={18} />
         </button>
         <input
+          ref={formRef}
           placeholder="Type a message"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-full px-4 py-2 text-[14px] outline-none placeholder:text-[var(--muted)]"
         />
         <button
+          onClick={handleSend}
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
           style={{ background: "var(--accent)", color: "#0d0e12" }}
         >
