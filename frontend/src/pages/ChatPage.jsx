@@ -3,9 +3,12 @@ import { ArrowLeft, MoreVertical, Send, Paperclip, Smile } from "lucide-react";
 import Avatar from "../components/Avatar";
 import MessageBubble from "../components/MessageBubble";
 import DUMMY_MESSAGES from "../data/messages.js";
-import { sendMessage } from "../sockets";
+import { sendMessage, socket } from "../sockets/chat.socket.js";
+import { useState } from "react";
+import { useEffect } from "react";
 
 export default function ChatPage({ contact, onBack }) {
+  const [message, setMessage] = useState(DUMMY_MESSAGES);
   const formRef = useRef();
   const handleSend = () => {
     const text = formRef.current.value.trim();
@@ -13,6 +16,16 @@ export default function ChatPage({ contact, onBack }) {
     sendMessage({ text, contactId: contact?.id });
     formRef.current.value = "";
   };
+
+  useEffect(() => {
+    socket.on("msg", (payload) => {
+      setMessage((prev) => [
+        ...prev,
+        { id: 1, text: payload.text, mine: true, time: "now" },
+      ]);
+    });
+    return () => socket.off("msg");
+  }, []);
 
   if (!contact) {
     return (
@@ -67,7 +80,7 @@ export default function ChatPage({ contact, onBack }) {
 
       {/* messages */}
       <div className="flex-1 overflow-y-auto py-4">
-        {DUMMY_MESSAGES.map((m) => (
+        {message.map((m) => (
           <MessageBubble key={m.id} msg={m} />
         ))}
       </div>
