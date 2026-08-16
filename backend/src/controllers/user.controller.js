@@ -12,7 +12,6 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { delFromCloudinary } from "../utils/delFromCloudinary.js";
 
 const registerUser = asyncHandler(async (req, res) => {
-  
   const { email, username, password } = req.body;
 
   if ([email, username, password].some((field) => field?.trim() === 0)) {
@@ -59,9 +58,9 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, username, password } = req.body;
+  const { identifier, password } = req.body;
 
-  if (!email && !username) {
+  if (!identifier) {
     throw new ApiError(400, "Email or username is required");
   }
 
@@ -70,8 +69,8 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const result = await query(
-    "SELECT id,email,username,password FROM users WHERE email=$1 OR username=$2",
-    [email, username]
+    "SELECT id,email,username,password FROM users WHERE email=$1 OR username=$1",
+    [identifier]
   );
 
   if (result.rows.length === 0) {

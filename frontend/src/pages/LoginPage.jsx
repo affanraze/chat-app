@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import api from "../utils/api";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    identifier: '', // accepts either username or email
-    password: '',
+    identifier: "", // accepts either username or email
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -15,16 +16,44 @@ export default function LoginPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     // Form submission logic (e.g., API authentication request)
-    console.log('Submitting login payload:', formData);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    console.log("Submitting login payload:", formData);
+    try {
+      const result = await api.post("/api/v1/users/login", formData);
+      // Handle success (e.g., return data, show success message)
+      console.log(result.data);
+      return result.data;
+    } catch (error) {
+      // 1. Server responded with a status code outside the 2xx range (e.g., 400, 409, 500)
+      if (error.response) {
+        console.error("API Error:", error.response.status, error.response.data);
+        const errorMessage =
+          error.response.data?.message ||
+          "login failed. Please check your details.";
+        // Throw or return custom error message for UI display
+        throw new Error(errorMessage);
+      }
+      // 2. Request was made but no response was received (e.g., network error, server down)
+      else if (error.request) {
+        console.error("Network Error:", error.request);
+        throw new Error(
+          "Unable to connect to the server. Please check your connection.",
+        );
+      }
+      // 3. Something happened setting up the request or a runtime JS error occurred
+      else {
+        console.error("Unexpected Error:", error.message);
+        throw new Error("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    }
   };
 
   return (
@@ -53,8 +82,8 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email or Username Field */}
           <div className="space-y-1.5">
-            <label 
-              htmlFor="identifier" 
+            <label
+              htmlFor="identifier"
               className="block text-xs font-medium text-zinc-300 font-mono"
             >
               Username or Email
@@ -74,14 +103,14 @@ export default function LoginPage() {
           {/* Password Field */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label 
-                htmlFor="password" 
+              <label
+                htmlFor="password"
                 className="block text-xs font-medium text-zinc-300 font-mono"
               >
                 Password
               </label>
-              <a 
-                href="#" 
+              <a
+                href="#"
                 className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
               >
                 Forgot password?
@@ -105,13 +134,13 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full mt-2 rounded-md bg-zinc-100 px-3.5 py-2.5 text-xs font-medium text-zinc-950 hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-sans"
           >
-            {isLoading ? 'Authenticating...' : 'Sign In'}
+            {isLoading ? "Authenticating..." : "Sign In"}
           </button>
         </form>
 
         {/* Footer Link */}
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-500">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <Link
             to="/signup"
             className="text-zinc-300 font-medium hover:underline focus:outline-none"

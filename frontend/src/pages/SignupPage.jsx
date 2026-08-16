@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import axios from "axios";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import api from "../utils/api";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
+    username: "",
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,16 +18,43 @@ export default function SignupPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     // Form submission logic (e.g., API request)
-    console.log('Submitting signup payload:', formData);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    try {
+      const result = await api.post("/api/v1/users/register", formData);
+      // Handle success (e.g., return data, show success message)
+      console.log(result.data);
+      return result.data;
+    } catch (error) {
+      // 1. Server responded with a status code outside the 2xx range (e.g., 400, 409, 500)
+      if (error.response) {
+        console.error("API Error:", error.response.status, error.response.data);
+        const errorMessage =
+          error.response.data?.message ||
+          "Registration failed. Please check your details.";
+        // Throw or return custom error message for UI display
+        throw new Error(errorMessage);
+      }
+      // 2. Request was made but no response was received (e.g., network error, server down)
+      else if (error.request) {
+        console.error("Network Error:", error.request);
+        throw new Error(
+          "Unable to connect to the server. Please check your connection.",
+        );
+      }
+      // 3. Something happened setting up the request or a runtime JS error occurred
+      else {
+        console.error("Unexpected Error:", error.message);
+        throw new Error("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    }
   };
 
   return (
@@ -54,8 +83,8 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username Field */}
           <div className="space-y-1.5">
-            <label 
-              htmlFor="username" 
+            <label
+              htmlFor="username"
               className="block text-xs font-medium text-zinc-300 font-mono"
             >
               Username
@@ -74,8 +103,8 @@ export default function SignupPage() {
 
           {/* Email Field */}
           <div className="space-y-1.5">
-            <label 
-              htmlFor="email" 
+            <label
+              htmlFor="email"
               className="block text-xs font-medium text-zinc-300 font-mono"
             >
               Email address
@@ -94,8 +123,8 @@ export default function SignupPage() {
 
           {/* Password Field */}
           <div className="space-y-1.5">
-            <label 
-              htmlFor="password" 
+            <label
+              htmlFor="password"
               className="block text-xs font-medium text-zinc-300 font-mono"
             >
               Password
@@ -111,7 +140,9 @@ export default function SignupPage() {
               placeholder="••••••••"
               className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-colors"
             />
-            <p className="text-[10px] text-zinc-500">Must be at least 8 characters long</p>
+            <p className="text-[10px] text-zinc-500">
+              Must be at least 8 characters long
+            </p>
           </div>
 
           {/* Submit Button */}
@@ -120,13 +151,13 @@ export default function SignupPage() {
             disabled={isLoading}
             className="w-full mt-2 rounded-md bg-zinc-100 px-3.5 py-2.5 text-xs font-medium text-zinc-950 hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-sans"
           >
-            {isLoading ? 'Creating account...' : 'Create Account'}
+            {isLoading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
         {/* Footer Link */}
         <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center text-xs text-zinc-500">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="text-zinc-300 font-medium hover:underline focus:outline-none"
