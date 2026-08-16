@@ -1,10 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Search, MoreVertical } from "lucide-react";
+import { Search, MoreVertical, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 import ContactRow from "../components/ContactRow";
 
 export default function HomePage({ contacts, activeId, onSelect }) {
   const [query, setQuery] = useState("");
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   const filtered = useMemo(
     () => 
@@ -35,6 +44,13 @@ export default function HomePage({ contacts, activeId, onSelect }) {
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-red-400 hover:bg-[var(--hover)] transition-colors"
+          >
+            <LogOut size={18} />
+          </button>
           <button className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors">
             <MoreVertical size={18} />
           </button>

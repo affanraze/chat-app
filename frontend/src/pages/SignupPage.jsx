@@ -1,7 +1,6 @@
-import axios from "axios";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import api from "../utils/api";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -10,6 +9,9 @@ export default function SignupPage() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -24,36 +26,15 @@ export default function SignupPage() {
 
     // Form submission logic (e.g., API request)
     try {
-      const result = await api.post("/api/v1/users/register", formData);
-      // Handle success (e.g., return data, show success message)
-      console.log(result.data);
-      return result.data;
+      await register(formData);
+      navigate("/chat", { replace: true });
     } catch (error) {
-      // 1. Server responded with a status code outside the 2xx range (e.g., 400, 409, 500)
-      if (error.response) {
-        console.error("API Error:", error.response.status, error.response.data);
-        const errorMessage =
-          error.response.data?.message ||
-          "Registration failed. Please check your details.";
-        // Throw or return custom error message for UI display
-        throw new Error(errorMessage);
-      }
-      // 2. Request was made but no response was received (e.g., network error, server down)
-      else if (error.request) {
-        console.error("Network Error:", error.request);
-        throw new Error(
-          "Unable to connect to the server. Please check your connection.",
-        );
-      }
-      // 3. Something happened setting up the request or a runtime JS error occurred
-      else {
-        console.error("Unexpected Error:", error.message);
-        throw new Error("An unexpected error occurred. Please try again.");
-      }
+      setError(
+        error.response?.data?.message ||
+          "Registration failed. Please check your details.",
+      );
     } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
+      setIsLoading(false);
     }
   };
 
@@ -79,6 +60,12 @@ export default function SignupPage() {
             Enter your details below to get started
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username Field */}
