@@ -2,9 +2,16 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 export default function ProfileSettings({ onBack }) {
-  const { user, updataAvatar } = useAuth();
+  const { user, updataAvatar, updateInfo } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [username, setUsername] = useState(user?.username || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [saving, setSaving] = useState(false);
+  const [infoError, setInfoError] = useState("");
+  const [infoSuccess, setInfoSuccess] = useState("");
+  const hasChanges =
+    username !== (user?.username || "") || email !== (user?.email || "");
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     e.target.value = "";
@@ -19,6 +26,23 @@ export default function ProfileSettings({ onBack }) {
       setError("Failed to update avatar. Please try again.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const changeInfo = async () => {
+    if (!hasChanges) return;
+    setSaving(true);
+    setInfoError("");
+    setInfoSuccess("");
+    try {
+      await updateInfo({ username, email });
+      setUsername(username);
+      setEmail(email);
+      setInfoSuccess("Profile updated successfully.");
+    } catch {
+      setInfoError("Failed to update profile. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -152,7 +176,8 @@ export default function ProfileSettings({ onBack }) {
                 <input
                   type="text"
                   id="username"
-                  defaultValue={user?.username}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   placeholder="username"
                   className="w-full pl-8 pr-4 py-2.5 bg-[#0e0f12] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all"
                 />
@@ -189,7 +214,8 @@ export default function ProfileSettings({ onBack }) {
                 <input
                   type="email"
                   id="email"
-                  defaultValue={user?.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   className="w-full pl-10 pr-4 py-2.5 bg-[#0e0f12] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all"
                 />
@@ -198,11 +224,15 @@ export default function ProfileSettings({ onBack }) {
 
             {/* Save Button Container */}
             <div className="pt-4 border-t border-zinc-800/80 flex justify-end">
+              {infoError && <p className="text-xs text-rose-400 mr-4 self-center">{infoError}</p>}
+              {infoSuccess && <p className="text-xs text-emerald-400 mr-4 self-center">{infoSuccess}</p>}
               <button
+                onClick={changeInfo}
                 type="submit"
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition-all"
+                disabled={!hasChanges || saving}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               >
-                Save Changes
+                {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>

@@ -69,7 +69,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const result = await query(
-    "SELECT id,email,username,password FROM users WHERE email=$1 OR username=$1",
+    "SELECT id,email,username,password,avatar FROM users WHERE email=$1 OR username=$1",
     [identifier]
   );
 

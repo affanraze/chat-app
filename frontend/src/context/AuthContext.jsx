@@ -53,6 +53,15 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const updateInfo = async (info) => {
+    const { data } = await api.patch(
+      "/api/v1/users/update-profile-info",
+      info
+    );
+    setUser((prev) => (prev ? { ...prev, ...data.data } : prev));
+    return data;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -63,6 +72,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         updataAvatar,
+        updateInfo,
         logout,
       }}
     >
