@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import HomePage from "./HomePage.jsx";
 import ChatPage from "./ChatPage.jsx";
+import ProfileSettings from "./ProfileSetting.jsx";
 import CONTACTS from "../data/contacts.js";
 
 export default function ChatApp() {
   const [activeId, setActiveId] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
   const activeContact = CONTACTS.find((c) => c.id === activeId) || null;
+  const showMain = activeContact || showProfile;
 
   return (
     <div className="w-full h-screen flex overflow-hidden">
@@ -17,15 +20,24 @@ export default function ChatApp() {
       {/* sidebar / home page */}
       <div
         className={`w-full md:w-[380px] md:shrink-0 border-r border-[var(--border)] ${
-          activeContact ? "hidden md:block" : "block"
+          showMain ? "hidden md:block" : "block"
         }`}
       >
-        <HomePage contacts={CONTACTS} activeId={activeId} onSelect={setActiveId} />
+        <HomePage
+          contacts={CONTACTS}
+          activeId={activeId}
+          onSelect={setActiveId}
+          onOpenSettings={() => setShowProfile(true)}
+        />
       </div>
 
-      {/* chat page */}
-      <div className={`flex-1 ${activeContact ? "block" : "hidden md:block"}`}>
-        <ChatPage contact={activeContact} onBack={() => setActiveId(null)} />
+      {/* chat page / profile settings */}
+      <div className={`flex-1 ${showMain ? "block" : "hidden md:block"}`}>
+        {showProfile ? (
+          <ProfileSettings onBack={() => setShowProfile(false)} />
+        ) : (
+          <ChatPage contact={activeContact} onBack={() => setActiveId(null)} />
+        )}
       </div>
     </div>
   );
