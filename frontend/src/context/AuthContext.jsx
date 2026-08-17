@@ -47,6 +47,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updataAvatar = async (avatarFile) => {
+    const { data } = await api.patch("/api/v1/users/update-avatar", avatarFile);
+    setUser((prev) => (prev ? { ...prev, avatar: data.data.avatar } : prev));
+    return data;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -56,6 +62,7 @@ export const AuthProvider = ({ children }) => {
         isLoading: status === "loading",
         login,
         register,
+        updataAvatar,
         logout,
       }}
     >

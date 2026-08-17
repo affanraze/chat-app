@@ -5,12 +5,18 @@ import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 import ContactRow from "../components/ContactRow";
 
-export default function HomePage({ contacts, activeId, onSelect, onOpenSettings }) {
+export default function HomePage({
+  contacts,
+  activeId,
+  onSelect,
+  onOpenSettings,
+}) {
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -28,7 +34,7 @@ export default function HomePage({ contacts, activeId, onSelect, onOpenSettings 
   };
 
   const filtered = useMemo(
-    () => 
+    () =>
       contacts.filter((c) =>
         c.name.toLowerCase().includes(query.toLowerCase()),
       ),
@@ -40,16 +46,15 @@ export default function HomePage({ contacts, activeId, onSelect, onOpenSettings 
       {/* header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
-          <button
+          <img
+            src={user?.avatar}
             onClick={onOpenSettings}
             title="Profile settings"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-transform hover:scale-105"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-transform hover:scale-105 object-cover"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            A
-          </button>
+          ></img>
+
           <h1
-            
             className="text-[17px] font-semibold tracking-tight"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
@@ -58,13 +63,6 @@ export default function HomePage({ contacts, activeId, onSelect, onOpenSettings 
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />
-          <button
-            onClick={handleLogout}
-            title="Log out"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-red-400 hover:bg-[var(--hover)] transition-colors"
-          >
-            <LogOut size={18} />
-          </button>
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((o) => !o)}
@@ -84,6 +82,13 @@ export default function HomePage({ contacts, activeId, onSelect, onOpenSettings 
                 >
                   <Settings size={16} className="text-[var(--muted)]" />
                   Settings
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[13px] text-red-400 hover:bg-[var(--hover)] transition-colors"
+                >
+                  <LogOut size={16} />
+                  Log out
                 </button>
               </div>
             )}

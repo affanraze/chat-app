@@ -1,6 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function ProfileSettings({ onBack }) {
+  const { user, updataAvatar } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      await updataAvatar(formData);
+    } catch {
+      setError("Failed to update avatar. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 h-full bg-[#0e0f12] text-zinc-200 overflow-y-auto">
       {/* Top Header */}
@@ -33,9 +54,15 @@ export default function ProfileSettings({ onBack }) {
             <div className="relative group">
               {/* Avatar Preview */}
               <div className="w-24 h-24 rounded-full bg-indigo-600/20 border-2 border-indigo-500/40 flex items-center justify-center text-2xl font-bold text-indigo-400 overflow-hidden shadow-inner">
-                {/* Fallback Initials or Image Tag */}
-                <span>A</span>
-                {/* <img src="/avatar.jpg" alt="Profile" className="w-full h-full object-cover" /> */}
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{(user?.username || "A")[0].toUpperCase()}</span>
+                )}
               </div>
 
               {/* Upload Trigger Badge */}
@@ -64,6 +91,7 @@ export default function ProfileSettings({ onBack }) {
                 </svg>
                 <input
                   id="pfp-upload"
+                  onChange={handleFileChange}
                   type="file"
                   className="hidden"
                   accept="image/*"
@@ -78,6 +106,10 @@ export default function ProfileSettings({ onBack }) {
               <p className="text-xs text-zinc-400">
                 Recommended: Square PNG or JPG, at least 400x400px.
               </p>
+              {uploading && (
+                <p className="text-xs text-indigo-400">Uploading...</p>
+              )}
+              {error && <p className="text-xs text-rose-400">{error}</p>}
               <div className="pt-2 flex gap-3">
                 <label
                   htmlFor="pfp-upload"
@@ -120,7 +152,7 @@ export default function ProfileSettings({ onBack }) {
                 <input
                   type="text"
                   id="username"
-                  defaultValue="affan"
+                  defaultValue={user?.username}
                   placeholder="username"
                   className="w-full pl-8 pr-4 py-2.5 bg-[#0e0f12] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all"
                 />
@@ -157,7 +189,7 @@ export default function ProfileSettings({ onBack }) {
                 <input
                   type="email"
                   id="email"
-                  defaultValue="user@example.com"
+                  defaultValue={user?.email}
                   placeholder="name@example.com"
                   className="w-full pl-10 pr-4 py-2.5 bg-[#0e0f12] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all"
                 />
