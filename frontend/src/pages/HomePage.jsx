@@ -25,6 +25,7 @@ export default function HomePage({
   const [searchedUser, setSearchedUser] = useState(null);
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [addContact, setAddContact] = useState(contacts);
   const menuRef = useRef(null);
   const addUserRef = useRef(null);
   const searchTimer = useRef(null);
@@ -52,10 +53,10 @@ export default function HomePage({
 
   const filtered = useMemo(
     () =>
-      contacts.filter((c) =>
+      addContact.filter((c) =>
         c.name.toLowerCase().includes(query.toLowerCase()),
       ),
-    [contacts, query],
+    [addContact, query],
   );
 
   const handleUser = (e) => {
@@ -82,6 +83,23 @@ export default function HomePage({
         setSearching(false);
       }
     }, 1000);
+  };
+
+  const addUserInContact = () => {
+    setAddContact((prev) => [
+      ...prev,
+      {
+        id: searchedUser.id,
+        name: searchedUser.username,
+        initials: "AR",
+        last: "sent the api docs, check ws.js",
+        time: "2:27 pm",
+        unread: 2,
+        online: true,
+        hue: "#8b7fff",
+      },
+    ]);
+    console.log(searchedUser);
   };
 
   return (
@@ -207,7 +225,10 @@ export default function HomePage({
                 src={searchedUser.avatar}
                 alt={searchedUser.username}
                 className="w-9 h-9 rounded-full object-cover shrink-0"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+                style={{
+                  background: "var(--accent-soft)",
+                  color: "var(--accent)",
+                }}
               />
               <span
                 className="min-w-0 flex-1 truncate text-[13px] font-medium"
@@ -216,6 +237,7 @@ export default function HomePage({
                 {searchedUser.username}
               </span>
               <button
+                onClick={() => addUserInContact(searchedUser)}
                 title="Add user"
                 className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
               >
