@@ -5,6 +5,8 @@ import {
   LogOut,
   Settings,
   UserPlus,
+  Loader2,
+  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -20,11 +22,15 @@ export default function HomePage({
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const [searchedUser, setSearchedUser] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const menuRef = useRef(null);
   const addUserRef = useRef(null);
+  const searchTimer = useRef(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, findUser } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -51,6 +57,32 @@ export default function HomePage({
       ),
     [contacts, query],
   );
+
+  const handleUser = (e) => {
+    const value = e.target.value;
+    clearTimeout(searchTimer.current);
+    if (!value.trim()) {
+      setSearchedUser(null);
+      setSearching(false);
+      setNotFound(false);
+      return;
+    }
+    setSearching(true);
+    setSearchedUser(null);
+    setNotFound(false);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const user = await findUser(value.trim());
+        setSearchedUser(user);
+        setNotFound(false);
+      } catch {
+        setSearchedUser(null);
+        setNotFound(true);
+      } finally {
+        setSearching(false);
+      }
+    }, 1000);
+  };
 
   return (
     <div className="relative h-full flex flex-col bg-[var(--elevated)]">
@@ -132,17 +164,65 @@ export default function HomePage({
 
       {/* add user popup */}
       {addUserOpen && (
-        <div className="absolute right-4 top-20 w-64 rounded-xl border border-[var(--border)] bg-[var(--elevated)] shadow-xl p-3 z-30" ref={addUserRef}>
-          <p className="text-[13px] font-medium mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <div
+          className="absolute right-4 top-20 w-64 rounded-xl border border-[var(--border)] bg-[var(--elevated)] shadow-xl p-3 z-30"
+          ref={addUserRef}
+        >
+          <p
+            className="text-[13px] font-medium mb-2"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
             Add user
           </p>
           <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-[var(--bg)] border border-[var(--border)]">
             <Search size={15} className="text-[var(--muted)] shrink-0" />
             <input
+              onChange={handleUser}
               placeholder="Search by username"
               className="w-full bg-transparent outline-none text-[13px] placeholder:text-[var(--muted)]"
             />
           </div>
+
+          {searching && (
+            <div className="flex items-center gap-2.5 mt-3 px-1">
+              <Loader2
+                size={15}
+                className="animate-spin text-[var(--muted)] shrink-0"
+              />
+              <span className="text-[13px] text-[var(--muted)]">
+                Searching...
+              </span>
+            </div>
+          )}
+
+          {!searching && notFound && (
+            <p className="text-center text-[13px] text-[var(--muted)] mt-4">
+              No user found
+            </p>
+          )}
+
+          {!searching && searchedUser && (
+            <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-[var(--bg)] border border-[var(--border)]">
+              <img
+                src={searchedUser.avatar}
+                alt={searchedUser.username}
+                className="w-9 h-9 rounded-full object-cover shrink-0"
+                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+              />
+              <span
+                className="min-w-0 flex-1 truncate text-[13px] font-medium"
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                {searchedUser.username}
+              </span>
+              <button
+                title="Add user"
+                className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
