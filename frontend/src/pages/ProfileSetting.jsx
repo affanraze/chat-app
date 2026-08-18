@@ -141,12 +141,6 @@ export default function ProfileSettings({ onBack }) {
                 >
                   Choose File
                 </label>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-rose-400 hover:text-rose-300 transition-colors"
-                >
-                  Remove
-                </button>
               </div>
             </div>
           </div>

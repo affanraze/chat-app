@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, MoreVertical, LogOut, Settings } from "lucide-react";
+import {
+  Search,
+  MoreVertical,
+  LogOut,
+  Settings,
+  UserPlus,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
@@ -13,7 +19,9 @@ export default function HomePage({
 }) {
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [addUserOpen, setAddUserOpen] = useState(false);
   const menuRef = useRef(null);
+  const addUserRef = useRef(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -22,6 +30,9 @@ export default function HomePage({
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
+      }
+      if (addUserRef.current && !addUserRef.current.contains(e.target)) {
+        setAddUserOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -42,7 +53,7 @@ export default function HomePage({
   );
 
   return (
-    <div className="h-full flex flex-col bg-[var(--elevated)]">
+    <div className="relative h-full flex flex-col bg-[var(--elevated)]">
       {/* header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5">
@@ -73,6 +84,16 @@ export default function HomePage({
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-11 w-44 rounded-xl border border-[var(--border)] bg-[var(--elevated)] shadow-xl py-1.5 z-20">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAddUserOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[13px] text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
+                >
+                  <UserPlus size={16} className="text-[var(--muted)]" />
+                  Add user
+                </button>
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -108,6 +129,22 @@ export default function HomePage({
           />
         </div>
       </div>
+
+      {/* add user popup */}
+      {addUserOpen && (
+        <div className="absolute right-4 top-20 w-64 rounded-xl border border-[var(--border)] bg-[var(--elevated)] shadow-xl p-3 z-30" ref={addUserRef}>
+          <p className="text-[13px] font-medium mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Add user
+          </p>
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-[var(--bg)] border border-[var(--border)]">
+            <Search size={15} className="text-[var(--muted)] shrink-0" />
+            <input
+              placeholder="Search by username"
+              className="w-full bg-transparent outline-none text-[13px] placeholder:text-[var(--muted)]"
+            />
+          </div>
+        </div>
+      )}
 
       {/* contact list */}
       <div className="flex-1 overflow-y-auto">

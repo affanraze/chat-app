@@ -7,6 +7,4 @@ socket.on("connect", () => console.log("socket connected", socket.id));
 socket.on("disconnect", () => console.log("socket disconnected"));
 const sendMessage = (payload) => socket.emit("user-message", payload);
 
-
-
 export { socket, sendMessage };
