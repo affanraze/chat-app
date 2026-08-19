@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 import ContactRow from "../components/ContactRow";
+import Avatar from "../components/Avatar";
 
 export default function HomePage({
   contacts,
@@ -221,14 +222,10 @@ export default function HomePage({
 
           {!searching && searchedUser && (
             <div className="flex items-center gap-3 mt-3 p-2 rounded-lg bg-[var(--bg)] border border-[var(--border)]">
-              <img
+              <Avatar
                 src={searchedUser.avatar}
-                alt={searchedUser.username}
-                className="w-9 h-9 rounded-full object-cover shrink-0"
-                style={{
-                  background: "var(--accent-soft)",
-                  color: "var(--accent)",
-                }}
+                name={searchedUser.username}
+                size={36}
               />
               <span
                 className="min-w-0 flex-1 truncate text-[13px] font-medium"

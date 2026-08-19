@@ -9,7 +9,7 @@ export default function ContactRow({ contact, active, onClick }) {
         active ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--hover)]"
       }`}
     >
-      <Avatar initials={contact.initials} hue={contact.hue} online={contact.online} />
+      <Avatar src={contact.avatar} name={contact.name} hue={contact.hue} online={contact.online} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span
