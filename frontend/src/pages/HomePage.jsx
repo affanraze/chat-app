@@ -26,7 +26,7 @@ export default function HomePage({
   const [searchedUser, setSearchedUser] = useState(null);
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
-  const [addContact, setAddContact] = useState(contacts);
+
   const menuRef = useRef(null);
   const addUserRef = useRef(null);
   const searchTimer = useRef(null);
@@ -54,10 +54,10 @@ export default function HomePage({
 
   const filtered = useMemo(
     () =>
-      addContact.filter((c) =>
+      contacts.filter((c) =>
         c.name.toLowerCase().includes(query.toLowerCase()),
       ),
-    [addContact, query],
+    [contacts, query],
   );
 
   const handleUser = (e) => {
@@ -87,20 +87,8 @@ export default function HomePage({
   };
 
   const addUserInContact = () => {
-    setAddContact((prev) => [
-      ...prev,
-      {
-        id: searchedUser.id,
-        name: searchedUser.username,
-        initials: "AR",
-        last: "sent the api docs, check ws.js",
-        time: "2:27 pm",
-        unread: 2,
-        online: true,
-        hue: "#8b7fff",
-      },
-    ]);
-    console.log(searchedUser);
+    setAddUserOpen(false);
+    onSelect(searchedUser.id, searchedUser);
   };
 
   return (

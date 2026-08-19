@@ -1,14 +1,70 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import HomePage from "./HomePage.jsx";
 import ChatPage from "./ChatPage.jsx";
 import ProfileSettings from "./ProfileSetting.jsx";
-import CONTACTS from "../data/contacts.js";
+import { socket } from "../sockets/chat.socket.js";
+import { fetchConversations, userToContact } from "../utils/conversations.js";
 
 export default function ChatApp() {
   const [activeId, setActiveId] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
-  const activeContact = CONTACTS.find((c) => c.id === activeId) || null;
+  const [conversations, setConversations] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchConversations()
+      .then((convos) => mounted && setConversations(convos))
+      .catch(console.error);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handler = (payload) => {
+      if (!payload?.contactId) return;
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === payload.contactId);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        const [item] = next.splice(idx, 1);
+        next.unshift({ ...item, last: payload.text, time: "now" });
+        return next;
+      });
+    };
+    socket.on("msg", handler);
+    return () => socket.off("msg", handler);
+  }, []);
+
+  const activeContact =
+    conversations.find((c) => c.id === activeId) || selectedUser || null;
   const showMain = activeContact || showProfile;
+
+  const handleSelect = (id, user) => {
+    setActiveId(id);
+    setSelectedUser(user ? userToContact(user) : null);
+  };
+
+  const handleMessageSent = (receiverId, text) => {
+    setConversations((prev) => {
+      const rest = prev.filter((c) => c.id !== receiverId);
+      const existing = prev.find((c) => c.id === receiverId);
+      const base =
+        existing ||
+        selectedUser || {
+          id: receiverId,
+          name: "New chat",
+          avatar: "",
+          last: "",
+          time: "",
+          unread: 0,
+          online: false,
+          hue: "#8b7fff",
+        };
+      return [{ ...base, last: text, time: "now" }, ...rest];
+    });
+  };
 
   return (
     <div className="w-full h-screen flex overflow-hidden">
@@ -24,9 +80,9 @@ export default function ChatApp() {
         }`}
       >
         <HomePage
-          contacts={CONTACTS}
+          contacts={conversations}
           activeId={activeId}
-          onSelect={setActiveId}
+          onSelect={handleSelect}
           onOpenSettings={() => setShowProfile(true)}
         />
       </div>
@@ -36,7 +92,11 @@ export default function ChatApp() {
         {showProfile ? (
           <ProfileSettings onBack={() => setShowProfile(false)} />
         ) : (
-          <ChatPage contact={activeContact} onBack={() => setActiveId(null)} />
+          <ChatPage
+            contact={activeContact}
+            onBack={() => setActiveId(null)}
+            onMessageSent={handleMessageSent}
+          />
         )}
       </div>
     </div>

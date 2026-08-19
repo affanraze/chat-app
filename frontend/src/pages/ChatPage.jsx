@@ -1,31 +1,98 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft, MoreVertical, Send, Paperclip, Smile } from "lucide-react";
 import Avatar from "../components/Avatar";
 import MessageBubble from "../components/MessageBubble";
-import DUMMY_MESSAGES from "../data/messages.js";
+import api from "../utils/api.js";
 import { sendMessage, socket } from "../sockets/chat.socket.js";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { formatMessageTime } from "../utils/conversations.js";
 
-export default function ChatPage({ contact, onBack }) {
-  const [message, setMessage] = useState(DUMMY_MESSAGES);
+export default function ChatPage({ contact, onBack, onMessageSent }) {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
   const formRef = useRef();
-  const handleSend = () => {
-    const text = formRef.current.value.trim();
-    if (!text) return;
-    sendMessage({ text, contactId: contact?.id });
-    formRef.current.value = "";
-  };
+  const listRef = useRef(null);
+  const sentIds = useRef(new Set());
+
+  const receiverId = contact?.id;
 
   useEffect(() => {
-    socket.on("msg", (payload) => {
-      setMessage((prev) => [
+    if (!receiverId) return;
+    let mounted = true;
+    setMessages([]);
+    setLoading(true);
+    api
+      .get(`/api/v1/messages/get-convo/${receiverId}`)
+      .then(({ data }) => {
+        if (!mounted) return;
+        setMessages(
+          data.data.map((m) => ({
+            id: m.id,
+            mine: m.sender_id === user?.id,
+            text: m.content,
+            time: formatMessageTime(m.created_at),
+          })),
+        );
+      })
+      .catch(console.error)
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, [receiverId, user?.id]);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+  }, [messages.length]);
+
+  useEffect(() => {
+    const handler = (payload) => {
+      if (payload?.contactId !== contact?.id) return;
+      if (payload?.id && sentIds.current.has(payload.id)) {
+        sentIds.current.delete(payload.id);
+        return;
+      }
+      setMessages((prev) => [
         ...prev,
-        { id: 1, text: payload.text, mine: true, time: "now" },
+        {
+          id: payload.id || Date.now(),
+          mine: false,
+          text: payload.text,
+          time: "now",
+        },
       ]);
-    });
-    return () => socket.off("msg");
-  }, []);
+    };
+    socket.on("msg", handler);
+    return () => socket.off("msg", handler);
+  }, [contact?.id]);
+
+  const handleSend = async () => {
+    const text = formRef.current.value.trim();
+    if (!text || !contact) return;
+    try {
+      const { data } = await api.post("/api/v1/messages/send-message", {
+        receiverId: contact.id,
+        content: text,
+      });
+      const msg = data.data;
+      sentIds.current.add(msg.id);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: msg.id,
+          mine: true,
+          text: msg.content,
+          time: formatMessageTime(msg.created_at),
+        },
+      ]);
+      sendMessage({ text: msg.content, contactId: contact.id, id: msg.id });
+      onMessageSent?.(contact.id, msg.content);
+      formRef.current.value = "";
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (!contact) {
     return (
@@ -57,7 +124,8 @@ export default function ChatPage({ contact, onBack }) {
           <ArrowLeft size={18} />
         </button>
         <Avatar
-          initials={contact.initials}
+          name={contact.name}
+          src={contact.avatar}
           hue={contact.hue}
           online={contact.online}
           size={38}
@@ -79,10 +147,14 @@ export default function ChatPage({ contact, onBack }) {
       </div>
 
       {/* messages */}
-      <div className="flex-1 overflow-y-auto py-4">
-        {message.map((m) => (
-          <MessageBubble key={m.id} msg={m} />
-        ))}
+      <div ref={listRef} className="flex-1 overflow-y-auto py-4">
+        {loading ? (
+          <p className="text-center text-[13px] text-[var(--muted)] mt-8">
+            Loading messages...
+          </p>
+        ) : (
+          messages.map((m) => <MessageBubble key={m.id} msg={m} />)
+        )}
       </div>
 
       {/* input */}
