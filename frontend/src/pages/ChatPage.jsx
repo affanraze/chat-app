@@ -13,7 +13,6 @@ export default function ChatPage({ contact, onBack, onMessageSent }) {
   const [loading, setLoading] = useState(false);
   const formRef = useRef();
   const listRef = useRef(null);
-  const sentIds = useRef(new Set());
 
   const receiverId = contact?.id;
 
@@ -48,50 +47,52 @@ export default function ChatPage({ contact, onBack, onMessageSent }) {
 
   useEffect(() => {
     const handler = (payload) => {
-      if (payload?.contactId !== contact?.id) return;
-      if (payload?.id && sentIds.current.has(payload.id)) {
-        sentIds.current.delete(payload.id);
-        return;
-      }
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: payload.id || Date.now(),
-          mine: false,
-          text: payload.text,
-          time: "now",
-        },
-      ]);
-    };
-    socket.on("msg", handler);
-    return () => socket.off("msg", handler);
-  }, [contact?.id]);
+      if (!payload?.senderId || !payload?.receiverId) return;
+      const belongsToConvo =
+        payload.senderId === contact?.id || payload.receiverId === contact?.id;
+      if (!belongsToConvo) return;
 
-  const handleSend = async () => {
+      setMessages((prev) => {
+        if (payload.tempId) {
+          const idx = prev.findIndex((m) => m.id === payload.tempId);
+          if (idx !== -1) {
+            const next = [...prev];
+            next[idx] = {
+              id: payload.id,
+              mine: payload.senderId === user?.id,
+              text: payload.content,
+              time: formatMessageTime(payload.createdAt),
+            };
+            return next;
+          }
+        }
+        if (prev.some((m) => m.id === payload.id)) return prev;
+        return [
+          ...prev,
+          {
+            id: payload.id,
+            mine: payload.senderId === user?.id,
+            text: payload.content,
+            time: formatMessageTime(payload.createdAt),
+          },
+        ];
+      });
+    };
+    socket.on("message", handler);
+    return () => socket.off("message", handler);
+  }, [contact?.id, user?.id]);
+
+  const handleSend = () => {
     const text = formRef.current.value.trim();
     if (!text || !contact) return;
-    try {
-      const { data } = await api.post("/api/v1/messages/send-message", {
-        receiverId: contact.id,
-        content: text,
-      });
-      const msg = data.data;
-      sentIds.current.add(msg.id);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: msg.id,
-          mine: true,
-          text: msg.content,
-          time: formatMessageTime(msg.created_at),
-        },
-      ]);
-      sendMessage({ text: msg.content, contactId: contact.id, id: msg.id });
-      onMessageSent?.(contact.id, msg.content);
-      formRef.current.value = "";
-    } catch (error) {
-      console.error(error);
-    }
+    const tempId = `temp-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: tempId, mine: true, text, time: "now" },
+    ]);
+    onMessageSent?.(contact.id, text);
+    formRef.current.value = "";
+    sendMessage({ receiverId: contact.id, content: text, tempId });
   };
 
   if (!contact) {

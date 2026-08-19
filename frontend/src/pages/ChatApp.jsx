@@ -4,8 +4,10 @@ import ChatPage from "./ChatPage.jsx";
 import ProfileSettings from "./ProfileSetting.jsx";
 import { socket } from "../sockets/chat.socket.js";
 import { fetchConversations, userToContact } from "../utils/conversations.js";
+import { useAuth } from "../context/AuthContext";
 
 export default function ChatApp() {
+  const { user } = useAuth();
   const [activeId, setActiveId] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -23,19 +25,24 @@ export default function ChatApp() {
 
   useEffect(() => {
     const handler = (payload) => {
-      if (!payload?.contactId) return;
+      if (!payload?.senderId || !payload?.receiverId) return;
+      const contactId =
+        payload.senderId === user?.id
+          ? payload.receiverId
+          : payload.senderId;
+      if (!contactId) return;
       setConversations((prev) => {
-        const idx = prev.findIndex((c) => c.id === payload.contactId);
+        const idx = prev.findIndex((c) => c.id === contactId);
         if (idx === -1) return prev;
         const next = [...prev];
         const [item] = next.splice(idx, 1);
-        next.unshift({ ...item, last: payload.text, time: "now" });
+        next.unshift({ ...item, last: payload.content, time: "now" });
         return next;
       });
     };
-    socket.on("msg", handler);
-    return () => socket.off("msg", handler);
-  }, []);
+    socket.on("message", handler);
+    return () => socket.off("message", handler);
+  }, [user?.id]);
 
   const activeContact =
     conversations.find((c) => c.id === activeId) || selectedUser || null;
