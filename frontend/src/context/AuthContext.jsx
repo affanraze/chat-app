@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../utils/api";
+import { connectSocket, disconnectSocket } from "../sockets/chat.socket.js";
 
 const AuthContext = createContext(null);
 
@@ -25,6 +26,14 @@ export const AuthProvider = ({ children }) => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [status]);
 
   const login = async (credentials) => {
     const { data } = await api.post("/api/v1/users/login", credentials);

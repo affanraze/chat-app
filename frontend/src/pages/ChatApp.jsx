@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import HomePage from "./HomePage.jsx";
 import ChatPage from "./ChatPage.jsx";
 import ProfileSettings from "./ProfileSetting.jsx";
-import { socket } from "../sockets/chat.socket.js";
+import { getSocket } from "../sockets/chat.socket.js";
 import { fetchConversations, userToContact } from "../utils/conversations.js";
 import { useAuth } from "../context/AuthContext";
 
@@ -24,6 +24,7 @@ export default function ChatApp() {
   }, []);
 
   useEffect(() => {
+    const s = getSocket();
     const handler = (payload) => {
       if (!payload?.senderId || !payload?.receiverId) return;
       const contactId =
@@ -40,8 +41,8 @@ export default function ChatApp() {
         return next;
       });
     };
-    socket.on("message", handler);
-    return () => socket.off("message", handler);
+    s.on("message", handler);
+    return () => s.off("message", handler);
   }, [user?.id]);
 
   const activeContact =
