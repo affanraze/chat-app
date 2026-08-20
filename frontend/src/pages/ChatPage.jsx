@@ -3,7 +3,7 @@ import { ArrowLeft, MoreVertical, Send, Paperclip, Smile } from "lucide-react";
 import Avatar from "../components/Avatar";
 import MessageBubble from "../components/MessageBubble";
 import api from "../utils/api.js";
-import { sendMessage, socket } from "../sockets/chat.socket.js";
+import { getSocket, sendMessage } from "../sockets/chat.socket.js";
 import { useAuth } from "../context/AuthContext";
 import { formatMessageTime } from "../utils/conversations.js";
 
@@ -46,6 +46,7 @@ export default function ChatPage({ contact, onBack, onMessageSent }) {
   }, [messages.length]);
 
   useEffect(() => {
+    const s = getSocket();
     const handler = (payload) => {
       if (!payload?.senderId || !payload?.receiverId) return;
       const belongsToConvo =
@@ -78,8 +79,8 @@ export default function ChatPage({ contact, onBack, onMessageSent }) {
         ];
       });
     };
-    socket.on("message", handler);
-    return () => socket.off("message", handler);
+    s.on("message", handler);
+    return () => s.off("message", handler);
   }, [contact?.id, user?.id]);
 
   const handleSend = () => {
